@@ -26,6 +26,7 @@ function App() {
       pc.onicecandidate = (ice) => {
         if (ice && ice.candidate && ice.candidate.candidate) {
           const candidate = ice.candidate.candidate;
+          console.log(candidate)
           const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
           const ipMatch = candidate.match(ipRegex);
 
