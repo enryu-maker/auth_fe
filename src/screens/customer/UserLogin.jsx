@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { images } from '../../assets/image'
 import axios from 'axios'
+import { RotatingLines } from 'react-loader-spinner'
 
 export default function UserLogin() {
     const [activeMethods, setActiveMethods] = useState([])
+    const [show, setShow] = useState(false)
+    const [loading, setLoading] = useState(false)
+
+    const [qr, setQR] = useState('')
+
     const [data, setData] = useState({
         username: '',
         password: '',
-        login_type: 4
+        login_type: 4,
+        otp: 0
     })
     const [error, setError] = useState(null)
 
@@ -25,6 +32,24 @@ export default function UserLogin() {
     }
 
     const userLogin = async () => {
+        setLoading(true)
+        await axios
+            .post('http://127.0.0.1:8000/v1/auth/login', data, {
+                responseType: 'blob'
+            })
+            .then((res) => {
+                console.log(res.data)
+                setQR(URL.createObjectURL(res?.data))
+                setLoading(false)
+                setShow(true)
+            })
+            .catch((err) => {
+                console.log(err.data)
+                setLoading(false)
+            })
+    }
+    const verifyLogin = async () => {
+        setLoading(true)
         await axios
             .post('http://127.0.0.1:8000/v1/auth/login', data)
             .then((res) => {
@@ -32,6 +57,7 @@ export default function UserLogin() {
             })
             .catch((err) => {
                 console.log(err.data)
+                setLoading(false)
             })
     }
     useEffect(() => {
@@ -39,6 +65,61 @@ export default function UserLogin() {
     }, [])
     return (
         <div className="font-SUSE max-w-7xl mx-auto h-screen">
+            {show ? (
+                <div class="fixed inset-0 p-4 flex flex-wrap justify-center items-center w-full h-full z-[1000] before:fixed before:inset-0 before:w-full before:h-full before:bg-[rgba(0,0,0,0.5)] overflow-auto font-SUSE">
+                    <div class="w-full max-w-lg bg-white shadow-lg rounded-lg p-6 relative">
+                        <div class="flex items-center pb-3 border-b border-gray-300">
+                            <h3 class="text-gray-800 text-xl font-bold flex-1">
+                                Two factor Authentication (2FA)
+                            </h3>
+                        </div>
+
+                        <div class="my-6 flex justify-center items-center flex-col">
+                            <h1 className=" font-bold text-blue-600 border-b-2 w-full text-left pb-1">
+                                Configuring Google Authenticator or Authy
+                            </h1>
+                            <p className="text-sm py-1">
+                                1. Install Google Authenticator (IOS - Android)
+                                or Authy (IOS - Android). <br /> 2. In the
+                                authenticator app, select "+" icon. <br /> 3.
+                                Select "Scan a barcode (or QR code)" and use the
+                                phone's camera to scan this barcode.
+                            </p>
+                            <h1 className=" font-bold text-blue-600 border-b-2 pb-1 w-full text-left">
+                                Scan QR code
+                            </h1>
+                            <img src={qr} className="h-[200px] w-[200px]" />
+                            <h1 className=" font-bold text-blue-600 border-b-2 pb-1 w-full text-left">
+                                Verify Code
+                            </h1>
+                            <p className="text-sm py-1 text-left w-full">
+                                Please verify the authentication code:
+                            </p>
+                            <input
+                                type="number"
+                                onChange={(e) => {
+                                    setData({ ...data, otp: e.target.value })
+                                }}
+                                minLength={6}
+                                maxLength={6}
+                                className="border-2 text-center self-start mt-2 h-[35px] w-[150px] tracking-[8px] px-2 "
+                            />
+                        </div>
+
+                        <div class="border-t border-gray-300 pt-6 flex justify-end gap-4">
+                            <button
+                                onClick={() => {
+                                    verifyLogin()
+                                }}
+                                type="button"
+                                class="px-6 font-bold py-2 rounded-lg text-white text-sm border-none outline-none tracking-wide bg-blue-600 hover:bg-blue-700 active:bg-blue-600"
+                            >
+                                Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             <div className="grid md:grid-cols-2 items-center gap-8 h-full">
                 <form className="max-w-lg max-md:mx-auto w-full p-6">
                     <div className="mb-12">
@@ -110,7 +191,6 @@ export default function UserLogin() {
                                             </svg>
                                         </div>
                                     </div>
-
                                     <div className="mt-4">
                                         <label className="text-gray-800 text-[15px] mb-2 block">
                                             Password
@@ -172,13 +252,29 @@ export default function UserLogin() {
                                     <div className="mt-8">
                                         <button
                                             type="button"
+                                            disabled={loading}
                                             onClick={() => {
                                                 // console.log(data)
                                                 userLogin()
                                             }}
-                                            className="w-full shadow-xl py-3 px-6 text-sm tracking-wide font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+                                            className="w-full shadow-xl flex justify-center items-center py-3 px-6 text-sm tracking-wide font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                                         >
-                                            Log in
+                                            {loading ? (
+                                                <RotatingLines
+                                                    visible={true}
+                                                    height="20"
+                                                    width="20"
+                                                    color="white"
+                                                    strokeColor="white"
+                                                    strokeWidth="5"
+                                                    animationDuration="0.75"
+                                                    ariaLabel="rotating-lines-loading"
+                                                    wrapperStyle={{}}
+                                                    wrapperClass=""
+                                                />
+                                            ) : (
+                                                'Login'
+                                            )}
                                         </button>
                                     </div>
                                     <p className="text-sm mt-8 text-center text-gray-800">
